@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SANCHARi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body, html {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #f1f5f9;
+      overflow: hidden;
+    }
+    
+    #titlebar {
+      position: absolute;
+      top: 0;
+      left: 280px;
+      width: calc(100% - 280px);
+      height: 60px;
+      background: linear-gradient(90deg, #0c4a6e, #075985);
+      color: white;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 1100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      letter-spacing: 0.5px;
+      justify-content: space-between;
+    }
+    
+    #titlebar .app-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    #map {
+      height: calc(100vh - 60px);
+      margin-left: 280px;
+      margin-top: 60px;
+      border-left: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    #sidebar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 280px;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.95);
+      padding: 20px;
+      box-shadow: 4px 0 15px rgba(0,0,0,0.4);
+      z-index: 1000;
+      overflow-y: auto;
+      border-right: 1px solid #334155;
+    }
+    
+    .section {
+      margin-bottom: 25px;
+      padding: 18px;
+      background: rgba(30, 41, 59, 0.7);
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      border: 1px solid #334155;
+    }
+    
+    .section h4 {
+      margin-bottom: 15px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .section h4 i {
+      color: #60a5fa;
+      width: 20px;
+      text-align: center;
+    }
+    
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    input {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid #475569;
+      color: #f1f5f9;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+    }
+    
+    input::placeholder {
+      color: #94a3b8;
+    }
+    
+    button {
+      background: linear-gradient(to bottom, #3b82f6, #2563eb);
+      color: white;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .divider {
+      text-align: center;
+      margin: 12px 0;
+      color: #94a3b8;
+      font-size: 13px;
+      position: relative;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #475569, transparent);
+    }
+    
+    .divider::before {
+      left: 0;
+    }
+    
+    .divider::after {
+      right: 0;
+    }
+    
+    .tool-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .tool-row button {
+      margin-bottom: 0;
+      padding: 10px;
+      font-size: 13px;
+    }
+    
+    #editAttrBtn {
+      background: linear-gradient(to bottom, #4b5563, #374151);
+    }
+    
+    #exportbox {
+      margin-top: 15px;
+    }
+    
+    .leaflet-control-layers {
+      margin-top: 70px;
+    }
+    
+    .info-footer {
+      position: absolute;
+      bottom: 15px;
+      right: 20px;
+      background: rgba(15, 23, 42, 0.9);
+      padding: 10px 18px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      z-index: 999;
+      border: 1px solid #334155;
+    }
+    
+    .info-footer span {
+      cursor: pointer;
+      font-weight: 500;
+      color: #93c5fd;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    #aboutPopup {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+      width: 350px;
+      display: none;
+      z-index: 1001;
+      border: 1px solid #334155;
+    }
+    
+    #aboutPopup h4 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: #e2e8f0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 10px;
+    }
+    
+    #aboutPopup p {
+      line-height: 1.6;
+      color: #cbd5e1;
+      margin-bottom: 15px;
+    }
+    
+    #aboutPopup ul {
+      padding-left: 20px;
+      margin-bottom: 15px;
+    }
+    
+    #aboutPopup li {
+      margin-bottom: 8px;
+      color: #cbd5e1;
+    }
+    
+    #aboutPopup strong {
+      color: #60a5fa;
+    }
+    
+    #escapeBtn {
+      background: linear-gradient(to bottom, #ef4444, #dc2626);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+    
+    #escapeBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+    
+    .lock-indicator {
+      position: absolute;
+      top: 70px;
+      left: 300px;
+      background: rgba(15, 23, 42, 0.95);
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid #334155;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    .autocomplete-items {
+      position: absolute;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      max-height: 250px;
+      overflow-y: auto;
+      background: rgba(15, 23, 42, 0.98);
+      z-index: 1000;
+      width: calc(100% - 76px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+      display: none;
+    }
+    
+    .autocomplete-item {
+      padding: 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #1e293b;
+      color: #e2e8f0;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    
+    .autocomplete-item:hover {
+      background: rgba(30, 41, 59, 0.8);
+    }
+    
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+    
+    .panchayat-boundary {
+      stroke: #60a5fa;
+      stroke-width: 3;
+      stroke-dasharray: 8, 4;
+      fill: rgba(96, 165, 250, 0.1);
+    }
+    
+    .panchayat-label {
+      background: rgba(15, 23, 42, 0.9);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      color: #e2e8f0;
+      border: 1px solid #60a5fa;
+      text-align: center;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .status-bar {
+      position: absolute;
+      bottom: 15px;
+      left: 300px;
+      background: rgba(15, 23, 42, 0.9);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      z-index: 999;
+      display: flex;
+      gap: 20px;
+      border: 1px solid #334155;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #cbd5e1;
+    }
+    
+    .feature-count, .map-scale {
+      font-weight: 600;
+      color: #60a5fa;
+    }
+    
+    .loading-indicator {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(15, 23, 42, 0.9);
+      padding: 20px 30px;
+      border-radius: 10px;
+      z-index: 1001;
+      text-align: center;
+      border: 1px solid #334155;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    }
+    
+    .loading-indicator i {
+      font-size: 32px;
+      margin-bottom: 15px;
+      color: #60a5fa;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+<div id="sidebar">
+  <div class="section">
+    <h4><i class="fas fa-search-location"></i> Zoom to Panchayat</h4>
+    <input id="panchayat" placeholder="Enter Panchayat Name, Kerala" />
+    <div id="panchayat-autocomplete" class="autocomplete-items"></div>
+    <button onclick="zoomToPanchayat()"><i class="fas fa-crosshairs"></i> Zoom to Panchayat</button>
+  </div>
+  <div class="section">
+    <h4><i class="fas fa-map-marker-alt"></i> Select Area of Interest</h4>
+    <input id="digipin" placeholder="Enter DIGIPIN" />
+    <div class="divider">OR</div>
+    <input id="lat" placeholder="Latitude" type="number" step="any" />
+    <input id="lng" placeholder="Longitude" type="number" step="any" />
+    <button onclick="zoomToLocation()"><i class="fas fa-location-arrow"></i> View Location</button>
+  </div>
+  <div class="section">
+    <h4><i class="fas fa-tools"></i> Edit Tools</h4>
+    <div class="tool-row">
+      <button onclick="startDraw('polygon')"><i class="fas fa-draw-polygon"></i> Polygon</button>
+      <button onclick="startDraw('marker')"><i class="fas fa-map-pin"></i> Point</button>
+      <button onclick="startDraw('polyline')"><i class="fas fa-pencil-alt"></i> Line</button>
+      <button style="background:linear-gradient(to bottom, #ef4444, #dc2626)" onclick="startDelete()"><i class="fas fa-eraser"></i> Erase</button>
+    </div>
+    <button id="editAttrBtn" onclick="startEdit()"><i class="fas fa-edit"></i> Edit Attributes</button>
+  </div>
+  <div class="section" id="exportbox">
+    <h4><i class="fas fa-download"></i> Export Options</h4>
+    <button onclick="exportGeoJSON()"><i class="fas fa-file-code"></i> Export to GeoJSON</button>
+    <button onclick="exportToGeoServer()"><i class="fas fa-server"></i> Send to GeoServer</button>
+    <button onclick="sendToPostGIS()">Send to PostGIS</button>
+
+  </div>
+</div>
+<div id="titlebar">
+  <div class="app-title">
+    <i class="fas fa-map-marked-alt"></i> SANCHARi - Collaborative GIS Editor
+  </div>
+  <button id="escapeBtn" style="display:none;"><i class="fas fa-unlock"></i> Exit Panchayat</button>
+</div>
+<div class="lock-indicator" id="lockIndicator" style="display:none;">
+  <i class="fas fa-lock"></i> Editing locked to panchayat boundary
+</div>
+<div id="map"></div>
+<div class="info-footer">
+  <span onclick="toggleAboutPopup()"><i class="fas fa-info-circle"></i> About</span>
+  <span id="usernameDisplay"><i class="fas fa-user"></i> User: farniz@sanchari</span>
+</div>
+<div class="status-bar">
+  <div class="status-item"><i class="fas fa-layer-group"></i> Features: <span class="feature-count" id="featureCount">0</span></div>
+  <div class="status-item"><i class="fas fa-ruler"></i> Scale: 1:<span class="map-scale" id="mapScale">0</span></div>
+  <div class="status-item"><i class="fas fa-map-marker-alt"></i> Panchayat: <span id="currentPanchayat">None</span></div>
+</div>
+<div id="aboutPopup">
+  <h4><i class="fas fa-info-circle"></i> About SANCHARi</h4>
+  <p>SANCHARi is a collaborative GIS editing platform that allows manual editing, attribute tagging, and spatial exploration of geographic data layers.</p>
+  <p><strong>New Features:</strong></p>
+  <ul>
+    <li>Real panchayat boundary display using OSM Nominatim API</li>
+    <li>Boundary-locked editing within panchayat areas</li>
+    <li>Autocomplete search for panchayat names</li>
+    <li>Exit button to leave panchayat lock mode</li>
+    <li>Enhanced UI with dark theme and modern controls</li>
+  </ul>
+</div>
+<div class="loading-indicator" id="loadingIndicator">
+  <i class="fas fa-circle-notch"></i>
+  <p>Loading panchayat data...</p>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<script src="https://unpkg.com/osmtogeojson@3.0.0/osmtogeojson.js"></script>
+
+<script>
+  // Initialize map and layers
+  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  });
+  
+  const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/' +
+    'World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye',
+    maxZoom: 19
+  });
+
+  const baseMaps = {
+    "OpenStreetMap": osm,
+    "Satellite (Esri)": esriSat
+  };
+
+  const map = L.map('map', {
+    center: [10.8505, 76.2711], // Center of Kerala
+    zoom: 9,
+    layers: [osm]
+  });
+
+  let boundaryLayer = L.geoJSON(null, {
+  style: {
+    color: '#0077ff',
+    weight: 2,
+    fillOpacity: 0.1
+  }
+}).addTo(map);
+
+
+  L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+
+  const drawnItems = new L.FeatureGroup().addTo(map);
+  let currentTool = null;
+  let selectedLayer = null;
+  let currentBounds = null;
+  
+  // Variables for panchayat features
+  let currentPanchayatPolygon = null;
+  let isLockedToPanchayat = false;
+  const panchayatBoundaries = new L.FeatureGroup().addTo(map);
+  let currentPanchayatName = '';
+  
+  // Feature creation handler
+  map.on(L.Draw.Event.CREATED, function (e) {
+    const layer = e.layer;
+    
+    // Boundary validation for locked panchayat
+    if (isLockedToPanchayat && currentPanchayatPolygon) {
+      const drawnFeature = layer.toGeoJSON();
+      try {
+        // Check if the drawn feature is within the panchayat boundary
+        const isWithin = turf.booleanWithin(drawnFeature, currentPanchayatPolygon);
+        
+        if (!isWithin) {
+          alert("Feature must be within the selected panchayat boundary!");
+          return;
+        }
+      } catch (error) {
+        console.error("Boundary validation error:", error);
+      }
+    }
+    
+    drawnItems.addLayer(layer);
+    layer.feature = {
+      type: 'Feature',
+      properties: {
+        id: Date.now(),
+        type: e.layerType,
+        name: 'New Feature',
+        description: '',
+        status: 'Active'
+      },
+      geometry: layer.toGeoJSON().geometry
+    };
+    
+    updateFeatureCount();
+  });
+
+  // Feature selection handler
+  drawnItems.on('click', function (e) {
+    selectedLayer = e.layer;
+  });
+
+  // Update feature count display
+  function updateFeatureCount() {
+    document.getElementById('featureCount').textContent = drawnItems.getLayers().length;
+  }
+  
+  // Update map scale display
+  function updateMapScale() {
+    document.getElementById('mapScale').textContent = Math.round(map.getScale());
+  }
+  map.on('zoomend', updateMapScale);
+  updateMapScale();
+  updateFeatureCount();
+
+  // Drawing tools
+  function startDraw(type) {
+    if (currentTool) currentTool.disable();
+    const options = { featureGroup: drawnItems };
+    if (type === 'polyline') currentTool = new L.Draw.Polyline(map, options);
+    if (type === 'polygon') currentTool = new L.Draw.Polygon(map, options);
+    if (type === 'marker') currentTool = new L.Draw.Marker(map, options);
+    currentTool.enable();
+  }
+
+  // Attribute editing
+  function startEdit() {
+    if (!selectedLayer) return alert('Please select a feature first.');
+    
+    const props = selectedLayer.feature.properties;
+    const newName = prompt('Enter feature name:', props.name || '');
+    if (newName !== null) {
+      props.name = newName;
+      if (selectedLayer.bindPopup) {
+        selectedLayer.bindPopup(`<b>${newName}</b><br>Type: ${props.type}`).openPopup();
+      }
+    }
+  }
+
+  // Delete tool
+  function startDelete() {
+    if (currentTool) currentTool.disable();
+    currentTool = new L.EditToolbar.Delete(map, { featureGroup: drawnItems });
+    currentTool.enable();
+  }
+
+  // Panchayat search and zoom
+  async function zoomToPanchayat() {
+    
+    const nameInput = document.getElementById('panchayat');
+    const name = nameInput.value.trim();
+    if (!name) return alert("Please enter a panchayat name.");
+    
+    
+    showLoading(true);
+    
+    try {
+      // Query Nominatim API
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}, Kerala, India&polygon_geojson=1&featuretype=settlement&limit=5`;
+      const res = await fetch(url);
+      const data = await res.json();
+      
+      if (data.length === 0) {
+        showLoading(false);
+        return alert("No matching panchayat found. Please try another name.");
+      }
+      
+      // Find the best match (usually the first result)
+      const panchayat = data[0];
+      currentPanchayatName = panchayat.display_name.split(',')[0];
+      
+      // Clear previous panchayat boundaries
+      panchayatBoundaries.clearLayers();
+      
+      // Create boundary polygon if available
+      if (panchayat.geojson) {
+        const geojson = panchayat.geojson;
+        
+        // Create Leaflet layer from GeoJSON
+        const layer = L.geoJSON(geojson, {
+          style: {
+            color: '#60a5fa',
+            weight: 3,
+            dashArray: '8, 4',
+            fillOpacity: 0.1
+          }
+        }).addTo(panchayatBoundaries);
+        
+        // Store the GeoJSON for boundary validation
+        currentPanchayatPolygon = geojson;
+        
+        // Get bounds and zoom to the area
+        const bounds = layer.getBounds();
+        currentBounds = bounds;
+        map.fitBounds(bounds);
+        
+        // Add label to the center
+        const center = bounds.getCenter();
+        L.marker(center, {
+          icon: L.divIcon({
+            html: `<div class="panchayat-label">${currentPanchayatName}</div>`,
+            className: '',
+            iconSize: [150, 40]
+          })
+        }).addTo(panchayatBoundaries);
+        
+        // Lock to panchayat
+        lockToPanchayat();
+        document.getElementById('currentPanchayat').textContent = currentPanchayatName;
+      } else {
+        // If no polygon, use bounding box
+        const [minY, maxY, minX, maxX] = panchayat.boundingbox.map(Number);
+        currentBounds = L.latLngBounds([minY, minX], [maxY, maxX]);
+        map.fitBounds(currentBounds);
+        
+        // Add marker at center
+        const center = L.latLng(panchayat.lat, panchayat.lon);
+        L.marker(center, {
+          icon: L.divIcon({
+            html: `<div class="panchayat-label">${currentPanchayatName}</div>`,
+            className: '',
+            iconSize: [150, 40]
+          })
+        }).addTo(panchayatBoundaries);
+        
+        // Lock to panchayat
+        lockToPanchayat();
+        document.getElementById('currentPanchayat').textContent = currentPanchayatName;
+      }
+    } catch (error) {
+      console.error("Error fetching panchayat data:", error);
+      
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  function fetchPanchayatBoundary(name) {
+  const query = `
+    [out:json];
+    relation["admin_level"="9"]["name"~"${name}", i];
+    out geom;
+  `;
+
+  const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.elements || data.elements.length === 0) {
+        console.warn('No boundary found.');
+        return;
+      }
+
+      const geojson = osmtogeojson(data); // Convert Overpass JSON to GeoJSON
+      boundaryLayer.clearLayers();
+      boundaryLayer.addData(geojson);
+      map.fitBounds(boundaryLayer.getBounds());
+    })
+    .catch(err => console.error('Boundary fetch error:', err));
+}
+
+
+function fetchPanchayatBoundary(name) {
+  const query = `
+    [out:json];
+    relation["admin_level"="9"]["name"~"${name}", i];
+    out geom;
+  `;
+
+  const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.elements || data.elements.length === 0) {
+        console.warn('No boundary found.');
+        return;
+      }
+
+      const geojson = osmtogeojson(data); // Convert Overpass JSON to GeoJSON
+      boundaryLayer.clearLayers();
+      boundaryLayer.addData(geojson);
+      map.fitBounds(boundaryLayer.getBounds());
+    })
+    .catch(err => console.error('Boundary fetch error:', err));
+}
+
+
+
+  // Lock editor to panchayat boundary
+  function lockToPanchayat() {
+    isLockedToPanchayat = true;
+    document.getElementById('escapeBtn').style.display = 'inline-block';
+    document.getElementById('lockIndicator').style.display = 'flex';
+    
+    // Set map boundaries to prevent panning outside
+    map.setMaxBounds(currentBounds.pad(0.1));
+    
+    // Update UI
+    document.getElementById('panchayat').value = currentPanchayatName;
+  }
+
+  // Escape from panchayat lock
+  function escapePanchayat() {
+    isLockedToPanchayat = false;
+    document.getElementById('escapeBtn').style.display = 'none';
+    document.getElementById('lockIndicator').style.display = 'none';
+    map.setMaxBounds(null);
+    panchayatBoundaries.clearLayers();
+    currentPanchayatPolygon = null;
+    currentPanchayatName = '';
+    document.getElementById('currentPanchayat').textContent = 'None';
+    document.getElementById('panchayat').value = '';
+  }
+  
+  // Attach escape function to button
+  document.getElementById('escapeBtn').addEventListener('click', escapePanchayat);
+
+  // Location search
+  function zoomToLocation() {
+    const pin = document.getElementById('digipin').value;
+    const lat = document.getElementById('lat').value;
+    const lng = document.getElementById('lng').value;
+
+    const setViewIfWithinBounds = (lat, lng) => {
+      const point = L.latLng(lat, lng);
+      if (!currentBounds || currentBounds.contains(point)) {
+        map.setView(point, 17);
+        L.marker(point).addTo(drawnItems)
+          .bindPopup(`<b>Custom Point</b><br>Lat: ${lat}<br>Lng: ${lng}`)
+          .openPopup();
+        updateFeatureCount();
+      } else {
+        alert("Location is outside selected panchayat area.");
+      }
+    };
+
+    if (pin) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${pin}&countrycodes=in`;
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      if (data.length > 0) {
+        setViewIfWithinBounds(data[0].lat, data[0].lon);
+      } else {
+        alert("No match found.");
+      }
+    });
+} else if (lat && lng) {
+  setViewIfWithinBounds(parseFloat(lat), parseFloat(lng));
+}
+
+  }
+
+  // Export functions
+  function exportGeoJSON() {
+    const geojson = drawnItems.toGeoJSON();
+    const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sanchar_features.geojson";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function saveToLocalStorage() {
+    const geojson = drawnItems.toGeoJSON();
+    localStorage.setItem("geojson", JSON.stringify(geojson));
+    alert("GeoJSON saved to your browser's local storage.");
+  }
+
+  function exportToGeoServer() {
+    alert("GeoServer export would run here in a real implementation");
+    console.log("Simulating GeoServer export...");
+  }
+
+  async function sendToPostGIS() {
+  if (!currentPanchayatName) {
+    alert("No panchayat selected.");
+    return;
+  }
+
+  const payload = {
+    name: currentPanchayatName,
+    geometry: currentPanchayatPolygon || {
+      type: "Point",
+      coordinates: [
+        map.getCenter().lng,
+        map.getCenter().lat
+      ]
+    }
+  };
+
+  try {
+    const res = await fetch('/api/panchayats', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      alert('Panchayat data sent to server and saved successfully!');
+    } else {
+      const error = await res.text();
+      console.error("Server Error:", error);
+      alert('Failed to save data to PostGIS.');
+    }
+  } catch (err) {
+    console.error("Send Error:", err);
+    alert('Error sending data to server.');
+  }
+}
+
+
+  // Autocomplete functionality
+  let debounceTimer;
+  document.getElementById('panchayat').addEventListener('input', function(e) {
+    const value = e.target.value.trim();
+    const autocomplete = document.getElementById('panchayat-autocomplete');
+    
+    clearTimeout(debounceTimer);
+    
+    if (value.length < 3) {
+      autocomplete.style.display = 'none';
+      return;
+    }
+    
+    debounceTimer = setTimeout(async () => {
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}, Kerala, India&featuretype=settlement&limit=5`;
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.length > 0) {
+          autocomplete.innerHTML = data.map(item => 
+            `<div class="autocomplete-item" data-name="${item.display_name.split(',')[0]}">${item.display_name}</div>`
+          ).join('');
+          autocomplete.style.display = 'block';
+        } else {
+          autocomplete.style.display = 'none';
+        }
+      } catch (error) {
+        console.error("Autocomplete error:", error);
+        autocomplete.style.display = 'none';
+      }
+    }, 300);
+  });
+  
+  const input = document.getElementById('panchayat');
+const autocompleteBox = document.getElementById('panchayat-autocomplete');
+
+// Handle user input and fetch suggestions
+input.addEventListener('input', function () {
+  const query = this.value.trim();
+
+  if (query.length < 3) {
+    autocompleteBox.style.display = 'none';
+    return;
+  }
+
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      autocompleteBox.innerHTML = '';
+
+      if (data.length === 0) {
+        autocompleteBox.style.display = 'none';
+        return;
+      }
+
+      data.forEach(place => {
+        const item = document.createElement('div');
+        item.classList.add('autocomplete-item');
+        item.textContent = place.display_name;
+        item.dataset.name = place.display_name;
+        item.dataset.lat = place.lat;
+        item.dataset.lon = place.lon;
+        autocompleteBox.appendChild(item);
+      });
+
+      autocompleteBox.style.display = 'block';
+    })
+    .catch(err => {
+      console.error("Autocomplete fetch error:", err);
+      autocompleteBox.style.display = 'none';
+    });
+});
+
+// Handle autocomplete selection (use mousedown instead of click)
+autocompleteBox.addEventListener('mousedown', function(e) {
+  if (e.target.classList.contains('autocomplete-item')) {
+    input.value = e.target.dataset.name;
+    this.style.display = 'none';
+    zoomToPanchayat(parseFloat(e.target.dataset.lat), parseFloat(e.target.dataset.lon));
+    e.preventDefault(); // Prevent focus loss or default behavior
+  }
+});
+
+// Hide autocomplete when clicking outside
+document.addEventListener('click', function(e) {
+  if (!autocompleteBox.contains(e.target) && e.target !== input) {
+    autocompleteBox.style.display = 'none';
+  }
+});
+
+
+  // About popup
+  function toggleAboutPopup() {
+    const popup = document.getElementById("aboutPopup");
+    popup.style.display = popup.style.display === "block" ? "none" : "block";
+  }
+  
+  // Loading indicator
+  function showLoading(show) {
+    document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+  }
+  
+  // Initialize escape button functionality
+  document.getElementById('escapeBtn').addEventListener('click', escapePanchayat);
+</script>
+</body>
+</html>
