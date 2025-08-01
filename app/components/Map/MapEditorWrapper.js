@@ -8,15 +8,15 @@ const MapEditor = dynamic(() => import("./MapEditor"), {
   loading: () => <div className="text-center p-4">Loading map...</div>
 });
 
-export default function MapEditorWrapper({ username, setSelectedRoadId, villageFeature,
+export default function MapEditorWrapper({ username, villageFeature,
   roadGeojson,
-  setRoadGeojson, setRoadInfo, setShowRoadInfo }) {
+  setRoadGeojson}) {
 
   return (
     <div className="flex h-full">
-      <MapEditor user={username} setSelectedRoadId={setSelectedRoadId} villageFeature={villageFeature}
+      <MapEditor user={username} villageFeature={villageFeature}
         roadGeojson={roadGeojson}
-        setRoadGeojson={setRoadGeojson} setRoadInfo={setRoadInfo} setShowRoadInfo={setShowRoadInfo}/>
+        setRoadGeojson={setRoadGeojson}/>
     </div>
   );
 };

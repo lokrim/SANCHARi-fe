@@ -7,12 +7,12 @@ import LogCard from "./LogCard";
 import { useRouter } from "next/navigation";
 import { useMapTool } from "../context/MapToolContext";
 
-export default function SideBarEditMap({ selectedRoadId, username }) {
+export default function SideBarEditMap({ username }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState("map");
     const [versionHistory, setVersionHistory] = useState([]);
     const [activeLog, setActiveLog] = useState('');
-    const {logClickRef, hideLogRef} = useMapTool();
+    const {logClickRef, hideLogRef, selectedFeatureId} = useMapTool();
 
     async function onTabClick(tab) {
         if (tab == "exit") {
@@ -22,43 +22,16 @@ export default function SideBarEditMap({ selectedRoadId, username }) {
         setActiveTab(tab);
     }
 
-    const log = [
-        {
-            id: 1,
-            timestamp: "28-06-2025 12:00",
-            name: "Admin1",
-            desc: "Test Text"
-        },
-        {
-            id: 2,
-            timestamp: "28-06-2025 12:00",
-            name: "Admin1",
-            desc: "Test Text"
-        },
-        {
-            id: 3,
-            timestamp: "28-06-2025 12:00",
-            name: "Admin1",
-            desc: "Test Text"
-        },
-        {
-            id: 4,
-            timestamp: "28-06-2025 12:00",
-            name: "Admin1",
-            desc: "Test Text"
-        },
-    ];
-
     useEffect(() => {
-        if (activeTab === "log" && selectedRoadId) {
-            fetch(`/api/roads/${selectedRoadId}/versions`)
+        if (activeTab === "log" && selectedFeatureId) {
+            fetch(`/api/roads/${selectedFeatureId}/versions`)
                 .then((res) => res.json())
                 .then((data) => setVersionHistory(data));
         }
-        if (!selectedRoadId) {
+        if (!selectedFeatureId) {
             setVersionHistory([]);
         }
-    }, [activeTab, selectedRoadId]);
+    }, [activeTab, selectedFeatureId]);
 
 
     return (
@@ -79,7 +52,7 @@ export default function SideBarEditMap({ selectedRoadId, username }) {
                     < ExitIcon />
                 </button>
             </div>
-            {(activeTab == "map") && <EditMapTab roadId={selectedRoadId} username={username} />}
+            {(activeTab == "map") && <EditMapTab/>}
             {(activeTab == "log") && (
                 <div className="flex-1 overflow-y-auto p-2">
                     <label className="mb-2 text-black text-xl">Change Log</label>
@@ -88,7 +61,7 @@ export default function SideBarEditMap({ selectedRoadId, username }) {
                         <p className="mt-2 text-center text-gray-400">No versions available</p>
                     ) : (
                         <div>
-                            <label className="text-black text-sm">Road id: {selectedRoadId}</label>
+                            <label className="text-black text-sm">Road id: {selectedFeatureId}</label>
                             {versionHistory.map((v, i) => (
                                 <LogCard
                                     key={i}

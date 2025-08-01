@@ -18,7 +18,7 @@ export default function RoadInfoBox({
                 <label className="text-black">Road Information</label>
                 <button onClick={onClick} className="cursor-pointer hover:scale-90 transition"><CloseIcon /></button>
             </div>
-            <div className="p-2 grid grid-cols-[80px_1fr] gap-1 items-center place-items-start truncate">
+            <div className="p-2 grid grid grid-cols-[80px_1fr] gap-1 items-center place-items-start truncate">
                 <label className="w-full text-xs text-[#7B7B7B]">Road id</label>
                 <label className="w-full text-sm text-black truncate" title={roadid}>{roadid ?? '--'}</label>
                 <label className="w-full text-xs text-[#7B7B7B]">Road Name</label>

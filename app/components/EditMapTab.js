@@ -5,10 +5,25 @@ import EditMapBtn from "./EditMapBtn";
 import toast from "react-hot-toast";
 import { useMapTool } from "../context/MapToolContext";
 import { confirmWithInput } from "./confirmWithInputPromise";
+import LockedRoadList from "./LockedRoadList";
+import { useState } from "react";
 
-export default function EditMapTab({ roadId }) {
-
-    const { tool, setTool, saveEditRef, checkValidSave, cancelEditRef, detectedRoads, setDetectedRoads } = useMapTool();
+export default function EditMapTab() {
+    const { 
+        tool, 
+        setTool, 
+        saveEditRef, 
+        checkValidSave, 
+        cancelEditRef, 
+        selectedFeatureId,
+        detectedRoads,
+        setDetectedRoads,
+        isDetecting,
+        setIsDetecting
+    } = useMapTool();
+    
+    // State for detection parameters
+    const [detectThreshold, setDetectThreshold] = useState(5);
 
     const handleSave = async () => {
         const msg = await confirmWithInput();
@@ -25,43 +40,87 @@ export default function EditMapTab({ roadId }) {
     };
 
     const onSave = async () => {
-        if ((!roadId && !detectedRoads) || !checkValidSave.current?.()) {
+        if ((!selectedFeatureId && !detectedRoads) || !checkValidSave.current?.()) {
             toast.error('No Changes made');
             return;
         } else {
             await handleSave();
         }
     }
+    
+    const handleDetectionToggle = () => {
+        if (tool === 'detect-roads') {
+            // Cancel detection
+            setTool('move');
+            if (isDetecting) {
+                setIsDetecting(false);
+            }
+        } else {
+            // Start detection
+            setTool('detect-roads');
+        }
+    };
 
     return (
         <div className="flex-1 flex flex-col h-full overflow-y-auto">
-            <div className="p-2">
-                <button 
-                    className={`p-2 flex w-full text-white ${tool === 'detect-roads' ? 'bg-[#1e506b]' : 'bg-[#1E2E33]'} rounded-lg`}
-                    onClick={() => setTool(tool === 'detect-roads' ? 'move' : 'detect-roads')}
-                >
-                    <DetectIcon />
-                    <label className="mx-auto">
-                        {tool === 'detect-roads' ? 'Cancel Detection' : 'Detect Roads'}
-                    </label>
-                </button>
-                {detectedRoads && (
-                    <div className="mt-2 flex space-x-2">
-                        <button 
-                            className="p-2 flex-1 text-white bg-red-600 rounded-lg"
-                            onClick={() => setDetectedRoads(null)}
-                        >
-                            Discard
-                        </button>
-                        <button 
-                            className="p-2 flex-1 text-white bg-green-600 rounded-lg"
-                            onClick={onSave}
-                        >
-                            Save
-                        </button>
+            <div className="p-2 space-y-3">
+                {/* Detection section with more detailed UI */}
+                <div className="rounded-lg bg-[#f0f4f8] p-3 border border-[#d0d7de]">
+                    <h3 className="text-sm font-medium mb-2 text-gray-700">Automatic Road Detection</h3>
+                    
+                    <div className="flex items-center mb-2">
+                        <label className="text-xs text-gray-600 mr-2">Sensitivity:</label>
+                        <input 
+                            type="range" 
+                            min="1" 
+                            max="10" 
+                            value={detectThreshold} 
+                            onChange={(e) => setDetectThreshold(parseInt(e.target.value))}
+                            className="flex-1"
+                            disabled={isDetecting || tool === 'detect-roads'}
+                        />
+                        <span className="text-xs ml-2 w-6 text-center">{detectThreshold}</span>
                     </div>
-                )}
+                    
+                    <button 
+                        className={`p-2 flex w-full text-white ${
+                            isDetecting ? 'bg-orange-500' : 
+                            tool === 'detect-roads' ? 'bg-[#1e506b]' : 'bg-[#1E2E33]'
+                        } rounded-lg transition-colors duration-200`}
+                        onClick={handleDetectionToggle}
+                        disabled={isDetecting}
+                    >
+                        <DetectIcon />
+                        <span className="mx-auto">
+                            {isDetecting ? 'Detecting...' : 
+                             tool === 'detect-roads' ? 'Cancel Detection' : 'Detect Roads'}
+                        </span>
+                    </button>
+
+                    {detectedRoads && (
+                        <div className="mt-2 space-y-2">
+                            <div className="text-xs text-gray-600">
+                                <span className="font-medium">{detectedRoads.features?.length || 0}</span> roads detected
+                            </div>
+                            <div className="flex space-x-2">
+                                <button 
+                                    className="p-2 flex-1 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
+                                    onClick={() => setDetectedRoads(null)}
+                                >
+                                    <span className="mx-auto">Discard</span>
+                                </button>
+                                <button 
+                                    className="p-2 flex-1 text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200"
+                                    onClick={onSave}
+                                >
+                                    <span className="mx-auto">Save</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
+            
             <div className="px-2 py-1 flex text-black text-sm bg-[#E5E8EB]">
                 Navigation Tools
             </div>
@@ -172,17 +231,33 @@ export default function EditMapTab({ roadId }) {
                     placeholder="Threshold"
                 />
                 <button className="p-2 flex w-full text-black bg-[#E8F3FF] rounded-lg">
-                    < ShootIcon />
+                    <ShootIcon />
                     <label className="ml-2 mr-auto">Remove</label>
                 </button>
             </div>
+            <div className="px-2 py-1 flex text-black text-sm bg-[#E5E8EB]">
+                Locked Roads
+            </div>
+            <div className="m-2 rounded-md clip-border overflow-x-auto">
+                <table className="w-full table-auto text-xs text-black content-start">
+                    <thead className="bg-[#E5E8EB]">
+                        <tr>
+                            <th className="text-left px-2 py-1">Road ID</th>
+                            <th className="text-center px-2 py-1">Change</th>
+                            <th className="text-center px-2 py-1">Rollback</th>
+                            <th className="text-center px-2 py-1">Unlock</th>
+                        </tr>
+                    </thead>
+                    <LockedRoadList />
+                </table>
+            </div>
             <div className="sticky bottom-0 mt-auto h-fit p-3 flex items-center justify-center bg-white shadow-[0_0_30px_0_rgba(0,0,0,0.1)] rounded-t-2xl">
                 <button onClick={handleDiscard} className="mr-2 p-2 flex w-full text-black bg-[#E5E8EB] rounded-lg cursor-pointer">
-                    < CancelIcon />
+                    <CancelIcon />
                     <label className="ml-2 mr-auto cursor-pointer">Discard</label>
                 </button>
                 <button onClick={onSave} className="p-2 flex w-full text-white bg-[#1E2E33] rounded-lg cursor-pointer">
-                    < SaveIcon />
+                    <SaveIcon />
                     <label className="ml-2 mr-auto cursor-pointer">Save</label>
                 </button>
             </div>
